@@ -10,7 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class BoardQueryService {
 
     private Connection connection;
