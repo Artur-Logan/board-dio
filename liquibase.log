@@ -1,6 +1,6 @@
-2025-03-26T11:33:53.245-03:00  INFO 14440 --- [           main] liquibase.database                       : Set default schema name to public
-2025-03-26T11:33:53.252-03:00  INFO 14440 --- [           main] liquibase.command                        : Logging exception.
-2025-03-26T11:33:53.253-03:00  INFO 14440 --- [           main] liquibase.command                        : Command execution complete
+2025-03-26T13:28:31.514-03:00  INFO 20168 --- [           main] liquibase.database                       : Set default schema name to public
+2025-03-26T13:28:31.524-03:00  INFO 20168 --- [           main] liquibase.command                        : Logging exception.
+2025-03-26T13:28:31.525-03:00  INFO 20168 --- [           main] liquibase.command                        : Command execution complete
 liquibase.exception.CommandExecutionException: liquibase.exception.ChangeLogParseException: src/main/resources/db/changelog/db.changelog-master.yml does not exist
 	at liquibase.command.CommandScope.execute(CommandScope.java:253)
 	at liquibase.Liquibase.lambda$update$0(Liquibase.java:245)
@@ -14,7 +14,7 @@ liquibase.exception.CommandExecutionException: liquibase.exception.ChangeLogPars
 	at liquibase.Liquibase.update(Liquibase.java:194)
 	at liquibase.Liquibase.update(Liquibase.java:164)
 	at com.arturlogan.board_dio.persistence.migration.MigrationStrategy.executeMigrations(MigrationStrategy.java:38)
-	at com.arturlogan.board_dio.BoardDioApplication.main(BoardDioApplication.java:18)
+	at com.arturlogan.board_dio.BoardDioApplication.main(BoardDioApplication.java:22)
 Caused by: liquibase.exception.ChangeLogParseException: src/main/resources/db/changelog/db.changelog-master.yml does not exist
 	at liquibase.parser.core.yaml.YamlChangeLogParser.parse(YamlChangeLogParser.java:33)
 	at liquibase.command.core.helpers.DatabaseChangelogCommandStep.lambda$getDatabaseChangeLog$0(DatabaseChangelogCommandStep.java:129)
