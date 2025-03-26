@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @Service
+@RequiredArgsConstructor
 @AllArgsConstructor
 public class BoardService {
 

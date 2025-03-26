@@ -1,6 +1,6 @@
-2025-03-25T11:09:37.232-03:00  INFO 17704 --- [           main] liquibase.database                       : Set default schema name to public
-2025-03-25T11:09:37.246-03:00  INFO 17704 --- [           main] liquibase.command                        : Logging exception.
-2025-03-25T11:09:37.247-03:00  INFO 17704 --- [           main] liquibase.command                        : Command execution complete
+2025-03-26T11:33:53.245-03:00  INFO 14440 --- [           main] liquibase.database                       : Set default schema name to public
+2025-03-26T11:33:53.252-03:00  INFO 14440 --- [           main] liquibase.command                        : Logging exception.
+2025-03-26T11:33:53.253-03:00  INFO 14440 --- [           main] liquibase.command                        : Command execution complete
 liquibase.exception.CommandExecutionException: liquibase.exception.ChangeLogParseException: src/main/resources/db/changelog/db.changelog-master.yml does not exist
 	at liquibase.command.CommandScope.execute(CommandScope.java:253)
 	at liquibase.Liquibase.lambda$update$0(Liquibase.java:245)
