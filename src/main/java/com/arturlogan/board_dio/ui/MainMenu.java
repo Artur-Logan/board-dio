@@ -19,7 +19,7 @@ public class MainMenu {
 
     public void execute() throws SQLException {
         System.out.println("Bem vindo ao gerenciador de boards. Escolha uma opção desejada");
-        var option = 1;
+        var option = -1;
         while (true){
             System.out.println("1 - Criar um novo board");
             System.out.println("2 - Selecionar um board existente");
@@ -55,7 +55,7 @@ public class MainMenu {
         columns.add(initialCollumn);
 
         for (int i = 0; i < additionalColumns; i++){
-            System.out.println("Informe o nome de tarfeas pendentes do board");
+            System.out.println("Informe o nome da coluna de tarefa pendente no board");
             var pendingColumnName = scanner.next();
             var pendingCollumn = createColumn(pendingColumnName, BoardColumnKindEnum.PENDING, i + 1);
             columns.add(pendingCollumn);
@@ -68,7 +68,7 @@ public class MainMenu {
 
         System.out.println("Informe o nome da coluna de cancelamento do board");
         var cancelColumnName = scanner.next();
-        var cancelCollumn = createColumn(cancelColumnName, BoardColumnKindEnum.CANCEL, additionalColumns + 1);
+        var cancelCollumn = createColumn(cancelColumnName, BoardColumnKindEnum.CANCEL, additionalColumns + 2);
         columns.add(cancelCollumn);
 
         entity.setBoardColumns(columns);

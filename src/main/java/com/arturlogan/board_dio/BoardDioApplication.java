@@ -12,15 +12,10 @@ import static com.arturlogan.board_dio.persistence.config.ConnectionConfig.getCo
 
 @SpringBootApplication
 public class BoardDioApplication {
-	
+
 
 	public static void main(String[] args) throws SQLException {
 		SpringApplication.run(BoardDioApplication.class, args);
-
-		System.out.println("Ola mundo antes do execute");
-		try (var connection = getConnection()){
-			new MigrationStrategy(connection).executeMigrations();
-		}
 		new MainMenu().execute();
 
 	}
