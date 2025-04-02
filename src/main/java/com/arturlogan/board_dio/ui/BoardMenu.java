@@ -4,6 +4,7 @@ import com.arturlogan.board_dio.persistence.entity.BoardColumnEntity;
 import com.arturlogan.board_dio.persistence.entity.BoardEntity;
 import com.arturlogan.board_dio.services.BoardColumnQueryService;
 import com.arturlogan.board_dio.services.BoardQueryService;
+import com.arturlogan.board_dio.services.CardQueryService;
 import lombok.AllArgsConstructor;
 
 import java.sql.SQLException;
@@ -117,7 +118,19 @@ public class BoardMenu {
         }
     }
 
-    private void showCard() {
-        System.out.println("Implementar mostrar cards...");
+    private void showCard() throws SQLException{
+        System.out.println("Informe o id do card que deseja visualizar: ");
+        var selectedCardId = scanner.nextLong();
+        try (var connection = getConnection()){
+            new CardQueryService(connection).findById(selectedCardId)
+                    .ifPresentOrElse(c -> {
+                        System.out.printf("Card %s - %s. \n", c.id(), c.title());
+                        System.out.printf("Descrição %s - %s. \n", c.description());
+                        System.out.println(c.blocked() ? "Está bloqueado. Motivo: " + c.blockReason() :
+                                "Não está bloqueado");
+                        System.out.printf("Já foi bloqueado %s vezes", c.blocksAmount());
+                        System.out.printf("Está no momento na coluna %s - %s", c.columnId(), c.columnName());
+                    }, () -> System.out.printf("Não existe um card com o id %s\n", selectedCardId));
+        }
     }
 }
