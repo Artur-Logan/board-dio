@@ -2,9 +2,11 @@ package com.arturlogan.board_dio.ui;
 
 import com.arturlogan.board_dio.persistence.entity.BoardColumnEntity;
 import com.arturlogan.board_dio.persistence.entity.BoardEntity;
+import com.arturlogan.board_dio.persistence.entity.CardEntity;
 import com.arturlogan.board_dio.services.BoardColumnQueryService;
 import com.arturlogan.board_dio.services.BoardQueryService;
 import com.arturlogan.board_dio.services.CardQueryService;
+import com.arturlogan.board_dio.services.CardService;
 import lombok.AllArgsConstructor;
 
 import java.sql.SQLException;
@@ -66,8 +68,16 @@ public class BoardMenu {
         }
     }
 
-    private void createCard() {
-        System.out.println("Implementar criação de card...");
+    private void createCard() throws SQLException{
+        var card = new CardEntity();
+        System.out.println("Informe o título do card");
+        card.setTitle(scanner.next());
+        System.out.println("Informe a descrição do card");
+        card.setDescription(scanner.next());
+        card.setBoardColumn(entity.getInitialColumn());
+        try (var connection = getConnection()){
+            new CardService(connection).insert(card);
+        }
     }
 
     private void moveCardToNextColumn() {
@@ -75,17 +85,14 @@ public class BoardMenu {
     }
 
     private void showBoard() throws SQLException {
-        try (var connection = getConnection()) {
+        try(var connection = getConnection()){
             var optional = new BoardQueryService(connection).showBoardDetails(entity.getId());
             optional.ifPresent(b -> {
                 System.out.printf("Board [%s,%s]\n", b.id(), b.name());
-                b.columnDTOS().forEach(c -> {
-                    System.out.printf("Coluna [%s] tipo: [%s] tem %s cards\n", c.name(), c.kindEnum(), c.cardsAmount());
-                });
+                b.columns().forEach(c ->
+                        System.out.printf("Coluna [%s] tipo: [%s] tem %s cards\n", c.name(), c.kindEnum(), c.cardsAmount())
+                );
             });
-        } catch (SQLException e) {
-            System.out.println("Erro ao mostrar board: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -105,8 +112,9 @@ public class BoardMenu {
         var columnsIds = entity.getBoardColumns().stream().map(BoardColumnEntity::getId).toList();
         var selectedColumn = -1L;
         while (!columnsIds.contains(selectedColumn)){
-            System.out.printf("escolha uma coluna do board %s\n", entity.getName());
+            System.out.printf("Escolha uma coluna do board %s\n", entity.getName());
             entity.getBoardColumns().forEach(c -> System.out.printf("%s - %s [%s]", c.getId(), c.getName(), c.getKind()));
+            System.out.println();
             selectedColumn = scanner.nextLong();
         }
         try (var connection = getConnection()){
@@ -125,11 +133,11 @@ public class BoardMenu {
             new CardQueryService(connection).findById(selectedCardId)
                     .ifPresentOrElse(c -> {
                         System.out.printf("Card %s - %s. \n", c.id(), c.title());
-                        System.out.printf("Descrição %s - %s. \n", c.description());
+                        System.out.printf("Descrição %s\n", c.description());
                         System.out.println(c.blocked() ? "Está bloqueado. Motivo: " + c.blockReason() :
                                 "Não está bloqueado");
                         System.out.printf("Já foi bloqueado %s vezes", c.blocksAmount());
-                        System.out.printf("Está no momento na coluna %s - %s", c.columnId(), c.columnName());
+                        System.out.printf("Está no momento na coluna %s - %s\n", c.columnId(), c.columnName());
                     }, () -> System.out.printf("Não existe um card com o id %s\n", selectedCardId));
         }
     }

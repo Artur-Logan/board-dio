@@ -1,6 +1,7 @@
 package com.arturlogan.board_dio.persistence.dao;
 
 import com.arturlogan.board_dio.dto.BoardColumnDTO;
+import com.arturlogan.board_dio.dto.CardDetailsDTO;
 import com.arturlogan.board_dio.persistence.entity.BoardColumnEntity;
 import com.arturlogan.board_dio.persistence.entity.BoardColumnKindEnum;
 import com.arturlogan.board_dio.persistence.entity.CardEntity;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.arturlogan.board_dio.persistence.entity.BoardColumnKindEnum.findByName;
+import static java.util.Objects.isNull;
 
 @RequiredArgsConstructor
 public class BoardColumnDAO {
@@ -63,47 +65,64 @@ public class BoardColumnDAO {
     }
 
     public List<BoardColumnDTO> findByBoardIdWithDetails(Long boardId) throws SQLException {
-        List<BoardColumnDTO> dtos = new ArrayList<>();
-        var sql = "SELECT bc.id, bc.name, bc.kind, COUNT(SELECT c.id FROM CARDS c WHERE c.board_column_id = bc.id) cards_amount FROM BOARDS_COLUMNS bc WHERE board_id = ? ORDER BY \"order\""; // Correção aqui
-
+        var sql = """
+        SELECT
+            c.id as card_id,
+            c.title as card_title,
+            c.description as card_description,
+            bc.name as column_name,
+            bc.kind as column_kind,
+            bc.id as column_id,
+            COUNT(b.id) as block_count
+        FROM CARDS c
+        JOIN BOARDS_COLUMNS bc ON c.board_column_id = bc.id
+        LEFT JOIN BLOCKS b ON c.id = b.card_id AND b.unblock_at IS NULL
+        WHERE bc.board_id = ?
+        GROUP BY c.id, bc.id
+        """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
-            statement.executeQuery();
-            var resultSet = statement.getResultSet();
-            while (resultSet.next()) {
-                var dto = new BoardColumnDTO(
-                        resultSet.getLong("bc.id"),
-                        resultSet.getString("bc.name"),
-                        findByName(resultSet.getString("bc.kind")),
-                        resultSet.getInt("cards_amount")
-                );
-                dtos.add(dto);
+            try (var resultSet = statement.executeQuery()) {
+                List<BoardColumnDTO> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    var dto = new BoardColumnDTO(
+                            resultSet.getLong("column_id"), // Correção aqui!
+                            resultSet.getString("column_name"), // Correção aqui!
+                            findByName(resultSet.getString("column_kind")), // Correção aqui!
+                            resultSet.getInt("block_count")
+                    );
+
+                    results.add(dto);
+                }
+                return results;
             }
-            return dtos;
         }
     }
-
     public Optional<BoardColumnEntity> findById(Long boardId) throws SQLException {
-        List<BoardColumnEntity> entities = new ArrayList<>();
-        var sql = "SELECT bc.name, bc.kind, c.id, c.title, c.description FROM BOARDS_COLUMNS bc INNER JOIN CARDS c ON c.board_column_id = bc.id WHERE bc.id = ?";
+        var sql = "SELECT bc.id, bc.name, bc.kind, c.id, c.title, c.description FROM BOARDS_COLUMNS bc LEFT JOIN CARDS c ON c.board_column_id = bc.id WHERE bc.id = ?";
 
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
-            statement.executeQuery();
-            var resultSet = statement.getResultSet();
-            if (resultSet.next()) {
-                var entity = new BoardColumnEntity();
-                entity.setName(resultSet.getString("bc.name"));
-                entity.setKind(findByName(resultSet.getString("bc.kind")));
-                do {
-                    var card = new CardEntity();
-                    card.setId(resultSet.getLong("c.id"));
-                    card.setTitle(resultSet.getString("c.title"));
-                    card.setDescription(resultSet.getString("c.description"));
-                    entity.getCards().add(card);
-                } while (resultSet.next());
+            try (var resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    var entity = new BoardColumnEntity();
+                    entity.setId(resultSet.getLong("bc.id"));
+                    entity.setName(resultSet.getString("bc.name"));
+                    entity.setKind(findByName(resultSet.getString("bc.kind")));
+                    do {
+                        if (isNull(resultSet.getString("c.title"))) {
+                            continue;
+                        }
+                        var card = new CardEntity();
+                        card.setId(resultSet.getLong("c.id"));
+                        card.setTitle(resultSet.getString("c.title"));
+                        card.setDescription(resultSet.getString("c.description"));
+                        entity.getCards().add(card);
+                    } while (resultSet.next());
+                    return Optional.of(entity);
+                }
+                return Optional.empty();
             }
-            return Optional.empty();
         }
     }
 }
