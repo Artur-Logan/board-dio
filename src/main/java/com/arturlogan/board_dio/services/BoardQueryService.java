@@ -37,10 +37,10 @@ public class BoardQueryService {
         if (optional.isPresent()){
             var entity = optional.get();
             var columns = boardColumnDao.findByBoardIdWithDetails(entity.getId());
+            System.out.println("DEBUG: showBoardDetails - Número de colunas encontradas: " + columns.size());columns.forEach(col -> System.out.printf("DEBUG: showBoardDetails - Coluna: %s (%s) com %s cards\n", col.name(), col.id(), col.cardsAmount()));
             var dto = new BoardDetailsDTO(entity.getId(), entity.getName(), columns);
             return Optional.of(dto);
         }
-
         return Optional.empty();
     }
 }

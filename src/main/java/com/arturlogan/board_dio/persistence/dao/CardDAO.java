@@ -36,6 +36,7 @@ public class CardDAO {
     }
 
     public Optional<CardDetailsDTO> findById(final Long id) throws SQLException {
+        // ... (seu código findById permanece o mesmo) ...
         var sql =
                 """
                         SELECT c.id AS card_id,
@@ -59,14 +60,6 @@ public class CardDAO {
         try (var statement = connection.prepareStatement(sql)){
             statement.setLong(1, id);
             try (var resultSet = statement.executeQuery()){
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                System.out.println("--- Colunas no ResultSet (Teste Simplificado) ---");
-                System.out.println("Número de colunas: " + columnCount);
-                for (int i = 1; i <= columnCount; i++) {
-                    System.out.println("Nome da coluna [" + i + "]: " + metaData.getColumnName(i));
-                }
-                System.out.println("--------------------------------------------------");
                 if (resultSet.next()){
                     var dto = new CardDetailsDTO(
                             resultSet.getLong("card_id"),
@@ -83,5 +76,20 @@ public class CardDAO {
             }
         }
         return Optional.empty();
+    }
+
+    public void movetoColumn(final Long columnId, final Long cardId) throws SQLException{
+        var sql = "UPDATE CARDS SET board_column_id = ? WHERE id = ?;";
+
+        try (var statement = connection.prepareStatement(sql)){
+            var i = 1;
+            statement.setLong(i ++, columnId);
+            statement.setLong(i ++, cardId);
+            int rowsUpdated = statement.executeUpdate();
+            System.out.println("DEBUG (CardDAO.movetoColumn): Rows updated = " + rowsUpdated);
+            if (rowsUpdated == 0) {
+                System.out.println("DEBUG (CardDAO.movetoColumn): Nenhum card foi atualizado para cardId: " + cardId);
+            }
+        }
     }
 }

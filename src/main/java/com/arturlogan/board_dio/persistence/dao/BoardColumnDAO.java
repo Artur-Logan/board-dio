@@ -4,13 +4,11 @@ import com.arturlogan.board_dio.dto.BoardColumnDTO;
 import com.arturlogan.board_dio.dto.CardDetailsDTO;
 import com.arturlogan.board_dio.persistence.entity.BoardColumnEntity;
 import com.arturlogan.board_dio.persistence.entity.BoardColumnKindEnum;
+import com.arturlogan.board_dio.persistence.entity.BoardEntity;
 import com.arturlogan.board_dio.persistence.entity.CardEntity;
 import lombok.RequiredArgsConstructor;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,62 +64,72 @@ public class BoardColumnDAO {
 
     public List<BoardColumnDTO> findByBoardIdWithDetails(Long boardId) throws SQLException {
         var sql = """
-        SELECT
-            c.id as card_id,
-            c.title as card_title,
-            c.description as card_description,
-            bc.name as column_name,
-            bc.kind as column_kind,
-            bc.id as column_id,
-            COUNT(b.id) as block_count
-        FROM CARDS c
-        JOIN BOARDS_COLUMNS bc ON c.board_column_id = bc.id
-        LEFT JOIN BLOCKS b ON c.id = b.card_id AND b.unblock_at IS NULL
-        WHERE bc.board_id = ?
-        GROUP BY c.id, bc.id
-        """;
+                SELECT
+                    bc.id as column_id,
+                    bc.name as column_name,
+                    bc.kind as column_kind,
+                    COUNT(c.id) as cards_amount
+                FROM BOARDS_COLUMNS bc
+                LEFT JOIN CARDS c ON bc.id = c.board_column_id
+                WHERE bc.board_id = ?
+                GROUP BY bc.id, bc.name, bc.kind
+                ORDER BY bc.id;
+                """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
             try (var resultSet = statement.executeQuery()) {
                 List<BoardColumnDTO> results = new ArrayList<>();
+                System.out.println("DEBUG: findByBoardIdWithDetails - Iniciando processamento do ResultSet");
                 while (resultSet.next()) {
                     var dto = new BoardColumnDTO(
-                            resultSet.getLong("column_id"), // Correção aqui!
-                            resultSet.getString("column_name"), // Correção aqui!
-                            findByName(resultSet.getString("column_kind")), // Correção aqui!
-                            resultSet.getInt("block_count")
+                            resultSet.getLong("column_id"),
+                            resultSet.getString("column_name"),
+                            findByName(resultSet.getString("column_kind")),
+                            resultSet.getInt("cards_amount")
                     );
-
+                    System.out.printf("DEBUG: findByBoardIdWithDetails - Coluna lida: %s (%s) com %s cards\n", dto.name(), dto.id(), dto.cardsAmount());
                     results.add(dto);
                 }
+                System.out.println("DEBUG: findByBoardIdWithDetails - Número total de colunas lidas: " + results.size());
                 return results;
             }
         }
     }
-    public Optional<BoardColumnEntity> findById(Long boardId) throws SQLException {
-        var sql = "SELECT bc.id, bc.name, bc.kind, c.id, c.title, c.description FROM BOARDS_COLUMNS bc LEFT JOIN CARDS c ON c.board_column_id = bc.id WHERE bc.id = ?";
 
-        try (var statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, boardId);
-            try (var resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    var entity = new BoardColumnEntity();
-                    entity.setId(resultSet.getLong("bc.id"));
-                    entity.setName(resultSet.getString("bc.name"));
-                    entity.setKind(findByName(resultSet.getString("bc.kind")));
-                    do {
-                        if (isNull(resultSet.getString("c.title"))) {
-                            continue;
-                        }
+    public Optional<BoardColumnEntity> findById(final Long boardColumnId) throws SQLException {
+        var sql = """
+                    SELECT
+                        bc.name AS column_name,
+                        bc.kind AS column_kind,
+                        c.id AS card_id,
+                        c.title AS card_title,
+                        c.description AS card_description
+                    FROM BOARDS_COLUMNS bc
+                    LEFT JOIN CARDS c ON c.board_column_id = bc.id
+                    WHERE bc.id = ?;
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, boardColumnId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                BoardColumnEntity entity = null;
+                while (resultSet.next()) {
+                    if (entity == null) {
+                        entity = new BoardColumnEntity();
+                        entity.setId(boardColumnId); // Usando o ID passado como parâmetro
+                        entity.setName(resultSet.getString("column_name"));
+                        entity.setKind(findByName(resultSet.getString("column_kind")));
+                        entity.setCards(new ArrayList<>());
+                    }
+
+                    if (!isNull(resultSet.getString("card_title"))) {
                         var card = new CardEntity();
-                        card.setId(resultSet.getLong("c.id"));
-                        card.setTitle(resultSet.getString("c.title"));
-                        card.setDescription(resultSet.getString("c.description"));
+                        card.setId(resultSet.getLong("card_id"));
+                        card.setTitle(resultSet.getString("card_title"));
+                        card.setDescription(resultSet.getString("card_description"));
                         entity.getCards().add(card);
-                    } while (resultSet.next());
-                    return Optional.of(entity);
+                    }
                 }
-                return Optional.empty();
+                return Optional.ofNullable(entity);
             }
         }
     }
