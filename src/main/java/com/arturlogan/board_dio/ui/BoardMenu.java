@@ -1,6 +1,8 @@
 package com.arturlogan.board_dio.ui;
 
 import com.arturlogan.board_dio.dto.BoardColumnInfoDTO;
+import com.arturlogan.board_dio.exception.EntityNotFoundException;
+import com.arturlogan.board_dio.persistence.dao.CardDAO;
 import com.arturlogan.board_dio.persistence.entity.BoardColumnEntity;
 import com.arturlogan.board_dio.persistence.entity.BoardEntity;
 import com.arturlogan.board_dio.persistence.entity.CardEntity;
@@ -88,7 +90,7 @@ public class BoardMenu {
                 .map(bc -> new BoardColumnInfoDTO(bc.getId(), bc.getOrder(), bc.getKind()))
                 .toList();
         try (var connection = getConnection()) {
-            new CardService(connection).moveToNextColumn(cardId, entity.getId(), boardColumnsInfo); // Adicione entity.getId() aqui
+            new CardService(connection).moveToNextColumn(cardId, boardColumnsInfo); // Adicione entity.getId() aqui
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
         }
@@ -115,8 +117,21 @@ public class BoardMenu {
         System.out.println("Implementar bloquear card...");
     }
 
-    private void cancelCard() {
-        System.out.println("Implementar cancelar card...");
+    private void cancelCard() throws SQLException{
+        System.out.println("Informe o id do card que deseja mover para a coluna de cancelamento: ");
+        var cardId = scanner.nextLong();
+        var cancelColumn = entity.getCancelColumn();
+        var boardColumnsInfo = entity.getBoardColumns().stream()
+                .map(bc -> new BoardColumnInfoDTO(bc.getId(), bc.getOrder(), bc.getKind()))
+                .toList();
+
+
+        try (var connection = getConnection()) {
+            new CardService(connection).cancel(cardId, cancelColumn.getId(), boardColumnsInfo); // Adicione entity.getId() aqui
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+        }
+
     }
 
     private void showColumn() throws SQLException {
