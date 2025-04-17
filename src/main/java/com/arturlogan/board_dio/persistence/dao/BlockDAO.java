@@ -23,4 +23,20 @@ public class BlockDAO {
             statement.executeUpdate();
             }
         }
+
+    public void unblock(String reason, Long id) throws SQLException{
+
+        var sql = "UPDATE BLOCKS\n" +
+                "SET unblock_at = ?,\n" +
+                "    unblock_reason = ?\n" +
+                "WHERE card_id = ?\n" +
+                "  AND unblock_at IS NULL";
+        try (var statement = connection.prepareStatement(sql)) {
+            var i = 1;
+            statement.setTimestamp(i ++, toTimestamp(OffsetDateTime.now()));
+            statement.setString(i ++, reason);
+            statement.setLong(i, id);
+            statement.executeUpdate();
+        }
+    }
 }

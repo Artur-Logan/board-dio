@@ -133,4 +133,26 @@ public class CardService {
             throw ex;
         }
     }
+
+    public void unblock(final Long id, final String reason) throws SQLException{
+        try {
+            var dao = new CardDAO(connection);
+            var optionalCardDetails = dao.findById(id);
+            var dto = optionalCardDetails.orElseThrow(
+                    () -> new EntityNotFoundException("O card de id %s não foi encontrado".formatted(id))
+            );
+
+            if (!dto.blocked()) {
+                throw new CardBlockedException("O card %s não está bloqueado".formatted(id));
+            }
+
+            var blockDao = new BlockDAO(connection);
+            blockDao.unblock(reason, id);
+
+            connection.commit();
+        } catch (SQLException ex){
+            connection.rollback();
+            throw ex;
+        }
+    }
 }
