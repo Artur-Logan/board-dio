@@ -5,6 +5,7 @@ import com.arturlogan.board_dio.dto.CardDetailsDTO;
 import com.arturlogan.board_dio.exception.CardBlockedException;
 import com.arturlogan.board_dio.exception.CardFinishedException;
 import com.arturlogan.board_dio.exception.EntityNotFoundException;
+import com.arturlogan.board_dio.persistence.dao.BlockDAO;
 import com.arturlogan.board_dio.persistence.dao.CardDAO;
 import com.arturlogan.board_dio.persistence.entity.CardEntity;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static com.arturlogan.board_dio.persistence.config.ConnectionConfig.getConnection;
+import static com.arturlogan.board_dio.persistence.entity.BoardColumnKindEnum.CANCEL;
 import static com.arturlogan.board_dio.persistence.entity.BoardColumnKindEnum.FINAL;
 
 @AllArgsConstructor
@@ -99,6 +101,35 @@ public class CardService {
             this.connection.commit(); // Use a conexão injetada
         } catch (SQLException ex){
             this.connection.rollback(); // Use a conexão injetada
+            throw ex;
+        }
+    }
+
+    public void block(final Long id, final String reason, final List<BoardColumnInfoDTO> boardColumnsInfo) throws SQLException{
+        try{
+            var dao = new CardDAO(connection);
+            var optionalCardDetails = dao.findById(id);
+            var dto = optionalCardDetails.orElseThrow(
+                    () -> new EntityNotFoundException("O card de id %s não foi encontrado".formatted(id))
+            );
+
+            if (dto.blocked()) {
+                throw new CardBlockedException("O card %s já está bloqueado".formatted(id));
+            }
+            var currentColumn = boardColumnsInfo.stream().filter(bc -> bc.id().equals(dto.columnId()
+                    ))
+                            .findFirst()
+                            .orElseThrow();
+
+            if (currentColumn.kind().equals(FINAL) || currentColumn.kind().equals(CANCEL)){
+                throw new IllegalStateException("O card está em uma coluna do tipo %s e não pode ser bloquado".formatted(currentColumn.kind()));
+            }
+
+            var blockDao = new BlockDAO(connection);
+            blockDao.block(reason, id);
+            connection.commit();
+        } catch (SQLException ex){
+            connection.rollback();
             throw ex;
         }
     }

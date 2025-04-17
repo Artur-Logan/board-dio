@@ -1,5 +1,6 @@
 package com.arturlogan.board_dio.persistence.converter;
 
+import com.fasterxml.jackson.datatype.jsr310.ser.OffsetTimeSerializer;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,10 @@ public final class OffsetDateTimeConverter {
 
     public static OffsetDateTime toOffsetDateTime(final Timestamp value){
         return nonNull(value) ? OffsetDateTime.ofInstant(value.toInstant(), UTC) : null;
+    }
+
+    public static Timestamp toTimestamp(final OffsetDateTime value){
+        return nonNull(value) ? Timestamp.valueOf(value.atZoneSameInstant(UTC).toLocalDateTime()): null;
     }
 
 }

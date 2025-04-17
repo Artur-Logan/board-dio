@@ -38,43 +38,52 @@ public class MainMenu {
         }
     }
 
-    private void createBoard() throws SQLException{
+    private void createBoard() throws SQLException {
         var entity = new BoardEntity();
 
         System.out.println("Informe o nome do seu board");
         entity.setName(scanner.next());
+        scanner.nextLine(); // Consumir a quebra de linha
 
         System.out.println("Seu board terá colunas além das 3 padrões? Se sim informe quantas, se não digite 0.");
         var additionalColumns = scanner.nextInt();
+        scanner.nextLine(); // Consumir a quebra de linha
 
         List<BoardColumnEntity> columns = new ArrayList<>();
 
         System.out.println("Informe o nome da coluna inicial do board");
         var initialColumnName = scanner.next();
+        scanner.nextLine(); // Consumir a quebra de linha
         var initialCollumn = createColumn(initialColumnName, BoardColumnKindEnum.INITIAL, 0);
         columns.add(initialCollumn);
 
-        for (int i = 0; i < additionalColumns; i++){
+        for (int i = 0; i < additionalColumns; i++) {
             System.out.println("Informe o nome da coluna de tarefa pendente no board");
             var pendingColumnName = scanner.next();
+            scanner.nextLine(); // Consumir a quebra de linha
             var pendingCollumn = createColumn(pendingColumnName, BoardColumnKindEnum.PENDING, i + 1);
             columns.add(pendingCollumn);
         }
 
         System.out.println("Informe o nome da coluna final");
         var finalColumnName = scanner.next();
+        scanner.nextLine(); // Consumir a quebra de linha
         var finalCollumn = createColumn(finalColumnName, BoardColumnKindEnum.PENDING, additionalColumns + 1);
         columns.add(finalCollumn);
 
         System.out.println("Informe o nome da coluna de cancelamento do board");
         var cancelColumnName = scanner.next();
+        scanner.nextLine(); // Consumir a quebra de linha
         var cancelCollumn = createColumn(cancelColumnName, BoardColumnKindEnum.CANCEL, additionalColumns + 2);
         columns.add(cancelCollumn);
 
         entity.setBoardColumns(columns);
-        try (var connection = getConnection()){
+        try (var connection = getConnection()) {
             var service = new BoardService(connection);
             service.insert(entity);
+        } catch (SQLException e) {
+            getConnection().rollback();
+            System.out.println("Erro ao criar o board: " + e.getMessage());
         }
     }
 
